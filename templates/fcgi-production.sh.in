@@ -1,0 +1,54 @@
+#!/bin/sh
+ 
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="FastCGI "
+NAME=${control-script}
+ 
+ROOT=${buildout:directory}
+BIN_PATH=$ROOT/bin
+LOG_PATH=$ROOT/log
+CONTROLSCRIPT=$BIN_PATH/$NAME
+SOCKETFILE=$BIN_PATH/$NAME.sock
+PIDFILE=$BIN_PATH/$NAME.pid
+ 
+d_start(){
+    $CONTROLSCRIPT runfcgi \
+        maxchildren=1 \
+        maxspare=1 \
+        method=prefork \
+        pidfile=$PIDFILE \
+        socket=$SOCKETFILE \
+        > /dev/null 2>&1 &
+}
+
+d_stop(){
+    if [ -f $PIDFILE ]; then
+       kill `cat $PIDFILE`
+       rm -f -- $PIDFILE
+    fi
+}
+ 
+ 
+case $1 in
+    start)
+    echo -n "Starting $DESC: $NAME"
+    d_start
+    echo "."
+    ;;
+    stop)
+    echo -n "Stopping $DESC: $NAME"
+    d_stop
+    echo "."
+    ;;
+    restart)
+    echo -n "Restarting: $DESC: $NAME"
+    d_stop
+    sleep 1
+    d_start
+    echo "."
+    ;;
+    *)
+    echo "Usage: $0 (start|stop|restart)"
+    exit 1
+    ;;
+esac

@@ -1,0 +1,23 @@
+server {
+    server_name ${server_name};
+    listen ${server_port};
+ 
+    location ^~ /media/ {
+        root ${buildout:directory}/media/;
+        expires 31d;
+    }
+    
+    # django fcgi
+    location / {
+        fastcgi_pass ${fcgi_host}:${fcgi_port};
+        fastcgi_param REQUEST_METHOD $request_method;
+        fastcgi_param QUERY_STRING $query_string;
+        fastcgi_param CONTENT_TYPE $content_type;
+        fastcgi_param CONTENT_LENGTH $content_length;
+        fastcgi_param SERVER_PROTOCOL $server_protocol;
+        fastcgi_param SERVER_PORT $server_port;
+        fastcgi_param SERVER_NAME $server_name;
+        fastcgi_param PATH_INFO $fastcgi_script_name;
+        fastcgi_param SERVER_ADDR $server_addr;
+    }
+}
