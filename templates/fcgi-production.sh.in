@@ -27,28 +27,45 @@ d_stop(){
        rm -f -- $PIDFILE
     fi
 }
+
+check_running(){
+	# Check that the process is running. If not, restart
+	if [ -f $PIDFILE ]; then
+		# We have a PIDFILE. Check if the process is running
+		if [ `ps -u ${username} | grep -i ${control-script} | wc -l` -lt 1 ]; then
+			d_start
+		fi
+	else
+		d_start
+	fi
+}
  
  
 case $1 in
     start)
-    echo -n "Starting $DESC: $NAME"
-    d_start
-    echo "."
-    ;;
-    stop)
-    echo -n "Stopping $DESC: $NAME"
-    d_stop
-    echo "."
-    ;;
+		echo -n "Starting $DESC: $NAME"
+		d_start
+		echo "."
+		;;
+	stop)
+		echo -n "Stopping $DESC: $NAME"
+		d_stop
+		echo "."
+		;;
     restart)
-    echo -n "Restarting: $DESC: $NAME"
-    d_stop
-    sleep 1
-    d_start
-    echo "."
-    ;;
+		echo -n "Restarting: $DESC: $NAME"
+		d_stop
+		sleep 1
+		d_start
+		echo "."
+		;;
+	check)
+		echo -n "Checking if the $DESC: $NAME is running..."
+		check_running
+		echo "."
+		;;
     *)
-    echo "Usage: $0 (start|stop|restart)"
+    echo "Usage: $0 (start|stop|restart|check)"
     exit 1
     ;;
 esac
