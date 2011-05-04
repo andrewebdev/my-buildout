@@ -2,6 +2,11 @@ server {
     server_name ${server_name};
     listen ${server_port};
  
+    location ^~ /static/ {
+        root ${buildout:directory}/media/;
+        expires 31d;
+    }
+
     location ^~ /media/ {
         root ${buildout:directory}/media/;
         expires 31d;
