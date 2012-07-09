@@ -6,8 +6,8 @@ setup(
     url="",
     description="",
     author="Your Name",
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
+    packages=find_packages('PROJECT_NAME'),
+    package_dir={'': 'PROJECT_NAME'},
     install_requires=[
         'setuptools',
     ],
