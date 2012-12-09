@@ -6,7 +6,7 @@ from fabric.contrib.console import confirm
 
 STAGING_ROOT = "${staging-root}"
 PRODUCTION_ROOT = "${production-root}"
-SCRIPT_NAME = "${control-script}"
+SCRIPT_NAME = "${django:control-script}"
 
 
 def test():
