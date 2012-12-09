@@ -10,7 +10,7 @@ dev_start(){
         host=${opts:app_host} \
         port=${opts:fcgi_port} \
         daemonize=false \
-        errorlog=$LOG_PATH/${control-script}_errors
+        errorlog=${logs:error_log}
 
 }
 
@@ -20,8 +20,8 @@ startapp(){
     $BIN_PATH/gunicorn_paster -D \
         -w ${opts:workers} \
         -p ${opts:pidfile} \
-        --log-file=${:logfile} \
-        ${:pasteini}
+        --log-file=${logs:instance_log} \
+        ${opts:paste_ini}
 
     # FastCGI
     # $CONTROLSCRIPT runfcgi \
@@ -44,7 +44,7 @@ check_running(){
     # Check that the process is running. If not, restart
     if [ -f ${opts:pidfile} ]; then
         # We have a PIDFILE. Check if the process is running
-        if [ `ps -u ${opts:username} | grep -i ${control-script} | wc -l` -lt 1 ]; then
+        if [ `ps -u ${opts:username} | grep -i ${opts:control-script} | wc -l` -lt 1 ]; then
             d_start
         fi
     else
