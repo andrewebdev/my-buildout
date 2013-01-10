@@ -1,30 +1,21 @@
 #!/bin/sh
- 
+
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-NAME=${control-script}
- 
-dev_start(){
-
-    $CONTROLSCRIPT runfcgi \
-        method=threaded \
-        host=${opts:app_host} \
-        port=${opts:fcgi_port} \
-        daemonize=false \
-        errorlog=${logs:error_log}
-
-}
+NAME=${opts:control-script}
+BIN_PATH=${buildout:directory}/bin
 
 
 startapp(){
     # Gunicorn
-    $BIN_PATH/gunicorn_paster -D \
+    $BIN_PATH/${django:control-script} run_gunicorn -D \
+        -u ${opts:user} \
         -w ${opts:workers} \
         -p ${opts:pidfile} \
-        --log-file=${logs:instance_log} \
-        ${opts:paste_ini}
+        -b unix:${opts:socketfile} \
+        --log-file=${logs:instance_log}
 
     # FastCGI
-    # $CONTROLSCRIPT runfcgi \
+    # $BIN_PATH/${django:control-script} runfcgi \
     #     maxchildren=1 \
     #     maxspare=1 \
     #     method=prefork \
@@ -44,15 +35,15 @@ check_running(){
     # Check that the process is running. If not, restart
     if [ -f ${opts:pidfile} ]; then
         # We have a PIDFILE. Check if the process is running
-        if [ `ps -u ${opts:username} | grep -i ${opts:control-script} | wc -l` -lt 1 ]; then
-            d_start
+        if [ `ps -u ${opts:user} | grep -i ${opts:control-script} | wc -l` -lt 1 ]; then
+            startapp
         fi
     else
-        d_start
+        startapp
     fi
 }
- 
- 
+
+
 case $1 in
     start)
         echo -n "Starting $NAME"
@@ -76,13 +67,8 @@ case $1 in
         check_running
         echo "."
         ;;
-    rundev)
-        echo -n "Running $NAME in development mode."
-        startdev
-        echo "."
-        ;;
     *)
-    echo "Usage: $0 (start|stop|restart|check|rundev)"
+    echo "Usage: $0 (start|stop|restart|check)"
     exit 1
     ;;
 esac

@@ -1,5 +1,4 @@
-from __future__ import with_statement
-from fabric.api import *
+from fabric.api import local, put, cd, abort, run
 from fabric.contrib.files import exists
 from fabric.contrib.console import confirm
 
@@ -7,75 +6,85 @@ from fabric.contrib.console import confirm
 STAGING_ROOT = "${staging-root}"
 PRODUCTION_ROOT = "${production-root}"
 SCRIPT_NAME = "${django:control-script}"
+APP_SCRIPT = './%s/bin/%s.sh' % (SCRIPT_NAME, SCRIPT_NAME)
+
+
+def app_path(server):
+    if server == 'staging':
+        return '%s/%s' % (STAGING_ROOT, SCRIPT_NAME)
+
+    elif server == 'production':
+        return '%s/%s' % (PRODUCTION_ROOT, SCRIPT_NAME)
+
+    abort("Invalid server path")
 
 
 def test():
     local('./bin/%s test' % SCRIPT_NAME)
 
 
-def copyjson():
-    put('*.json', STAGING_ROOT)
-    
-    
+def copyjson(server):
+    put('*.json', app_path(server))
+
+
 def make_archive(version="HEAD"):
-    local('git archive --format=tar --prefix=%s/ %s | gzip >%s-%s.tar.gz' % (
-        SCRIPT_NAME, version, SCRIPT_NAME, version))
+    filename = "%s-%s.tar.gz" % (SCRIPT_NAME, version)
+    local('git archive --format=tar --prefix=%s/ %s | gzip >%s' % (
+        SCRIPT_NAME, version, filename))
+    return filename
 
 
-def action(action=None, server="staging"):
-    if action:
-        if confirm("%s %s server?" % (action, server)):
-            if server == "staging":
-                with cd('%s/%s' % (STAGING_ROOT, SCRIPT_NAME)):
-                    run('sh ./bin/%s.sh %s' % (SCRIPT_NAME, action))
-
-            elif server == "production":
-                pass
+# Application script actions
+def process(action, server="staging"):
+    if action in ['start', 'restart', 'stop', 'check']:
+        if confirm("%s %s on %s?" % (action, SCRIPT_NAME, server)):
+            with cd(app_path(server)):
+                run('sh ./bin/%s.sh %s' % (SCRIPT_NAME, action))
     else:
         abort("Invalid action")
 
 
+def manage(command, server="staging"):
+    if confirm("Run management command, %s on %s?" % (command, server)):
+        with cd(app_path(server)):
+            run('./bin/%s %s' % (SCRIPT_NAME, command))
+
+
 def deploy(server="staging", version="HEAD"):
     if confirm("Deploy %s to %s server?" % (version, server)):
-        if server == "staging":
-            # Shouldn't really disable tests, but not critical for this site
-            local('./bin/%s test' % SCRIPT_NAME)
 
-            make_archive(version)
-            put('%s-%s.tar.gz' % (SCRIPT_NAME, version), STAGING_ROOT)
+        if server == "staging":
+            # local('./bin/%s test' % SCRIPT_NAME)
+
+            archive = make_archive(version)
+            put(archive, PRODUCTION_ROOT)
 
             with cd(STAGING_ROOT):
-                app_script = './%s/bin/%s.sh' % (SCRIPT_NAME, SCRIPT_NAME)
-
                 # Stop the process if it's running before continuing
-                if exists(app_script):
-                    run('sh %s stop' % app_script)
-                run('tar zxvf %s-%s.tar.gz' % (SCRIPT_NAME, version))
+                if exists(APP_SCRIPT):
+                    run('sh %s stop' % APP_SCRIPT)
+                run('tar zxvf %s' % archive)
 
             with cd('%s/%s' % (STAGING_ROOT, SCRIPT_NAME)):
-                run('python2.7 bootstrap.py -c production.cfg')
+                run('python2.7 bootstrap.py -c staging.cfg')
                 run('./bin/buildout -c staging.cfg')
 
         elif server == "production":
-            # Shouldn't really disable tests, but not critical for this site
-            local('./bin/%s test' % SCRIPT_NAME)
+            # local('./bin/%s test' % SCRIPT_NAME)
 
-            make_archive(version)
-            put('%s-%s.tar.gz' % (SCRIPT_NAME, version), PRODUCTION_ROOT)
+            archive = make_archive(version)
+            put(archive, PRODUCTION_ROOT)
 
             with cd(PRODUCTION_ROOT):
-                app_script = './%s/bin/%s.sh' % (SCRIPT_NAME, SCRIPT_NAME)
-
                 # Stop the process if it's running before continuing
-                if exists(app_script):
-                    run('sh %s stop' % app_script)
+                if exists(APP_SCRIPT):
+                    run('sh %s stop' % APP_SCRIPT)
 
-                run('tar zxvf %s-%s.tar.gz' % (SCRIPT_NAME, version))
+                run('tar zxvf %s' % archive)
 
             with cd('%s/%s' % (PRODUCTION_ROOT, SCRIPT_NAME)):
                 run('python2.7 bootstrap.py -c production.cfg')
                 run('./bin/buildout -c production.cfg')
-                
+
     else:
         abort("Aborting at user request")
-
