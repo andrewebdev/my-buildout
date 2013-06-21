@@ -6,6 +6,11 @@ http_path = '/'
 
 sass_dir = '${project-dir}static/sass/'
 css_path = '${project-dir}static/css/'
+css_dir = 'static/css/'
+
+fonts_path = '${project-dir}static/css/fonts/'
+fonts_dir = 'static/css/fonts/'
+
 images_path = '${project-dir}static/img/'
 javascripts_path = '${project-dir}static/js/'
 
