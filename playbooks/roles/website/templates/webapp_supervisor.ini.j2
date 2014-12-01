@@ -1,0 +1,11 @@
+[program:{{ webapp_name }}]
+command = {{ webapp_dir }}/bin/{{ webapp_name }} run_gunicorn
+    -u {{ webapp_user }}
+    -w 4
+    -b unix:{{ webapp_socketfile }}
+    --log-file={{ webapp_logs }}/{{ webapp_name }}.instance.log
+user = {{ webapp_user }}
+stdout_logfile = {{ webapp_logs }}/supervisor.log
+autostart = true
+autorestart = true
+redirect_stderr = true

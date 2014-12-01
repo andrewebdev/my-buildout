@@ -1,0 +1,17 @@
+[local]
+localhost ansible_connection=local
+
+[webservers]
+# Webservers here
+
+[webservers:vars]
+git_branch = production
+server_name = www.example.com
+listen_port = 
+user_home = /home/{{ ansible_ssh_user }}
+webapp_name = <your_django_app_name>
+webapp_user = <app_username>
+webapp_dir = {{ user_home }}/webapps/{{ webapp_name }}
+webapp_socketfile = {{ webapp_dir }}/bin/{{ webapp_name }}.sock
+webapp_logs = {{ webapp_dir }}/log
+webapp_media = {{ webapp_dir }}/cdn

@@ -1,0 +1,18 @@
+[unix_http_server]
+file={{ user_home }}/tmp/supervisor.sock
+
+[supervisord]
+logfile={{ user_home }}/log/supervisord/supervisord.log
+logfile_maxbytes=50MB
+logfile_backups=10
+loglevel=info
+pidfile={{ user_home }}/tmp/supervisord.pid
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix://{{ user_home }}/tmp/supervisor.sock
+
+[include]
+files = {{ user_home }}/local/etc/supervisord/*.ini

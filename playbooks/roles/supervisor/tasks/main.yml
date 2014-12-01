@@ -1,0 +1,40 @@
+# Set up supervisor on the webfaction server and prepares the default
+# configuration.
+---
+- name: Check that required supervisor directories exist
+  file: path={{ item }} state=directory
+  with_items:
+  - ~/local/etc/supervisord
+  - ~/log/supervisord
+
+# Supervisor expects config to be located in ~/etc,
+# but we will keep it in ~/local/etc, for this reason we will symlink to the
+# correct place
+- name: Create symlink to correct config location
+  file: path=~/etc
+        src=~/local/etc
+        state=link
+
+- name: Install supervisor
+  pip: name=supervisor state=present
+       executable={{ user_home }}/bin/pip2.7
+       extra_args="--user"
+
+- name: Create shell script that checks that supervisord is running
+  template: src=check_supervisord.sh.j2
+            dest={{ user_home }}/bin/check_supervisord.sh
+            mode=0744
+
+- name: Create base superivord config
+  template: src=supervisord.conf.j2
+            dest=~/local/etc/supervisord.conf
+            mode=0644
+
+# Set up supervisor cron jobs
+- name: Cron to check if supervisor is running at reboot
+  cron: name="start supervisor at boot" special_time=reboot
+        job="/home/{{ username }}/bin/check_supervisor.sh"
+
+- name: Cron to check that supervisor is running every minute
+  cron: name="is supervisor running"
+        job="/home/{{ username }}/bin/check_supervisor.sh"

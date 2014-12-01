@@ -1,0 +1,77 @@
+---
+# I prefer that my hosts are unaware of the code repo, and for that reason
+# I don't pull code from a remote git repo, but rather archive it, and
+# extract the archive on the remote.
+- name: Create latest code archive
+  local_action: shell cd "../" &&
+    git archive --format=tar {{ git_branch }} | gzip >{{ webapp_name }}-{{ git_branch }}.tar.gz
+
+
+- name: Extract archive on remote
+  unarchive: src=../{{ webapp_name }}-{{ git_branch }}.tar.gz dest={{ webapp_dir }}/
+
+
+# We may not always want to run bootstrap, but the method below with never
+# run again after it was first bootstrapped. We may do something about this
+# in future. Maybe a variable or flag to force bootstrap to run?
+- name: Bootstrap webapp
+  command: python2.7 -S bootstrap.py
+  args:
+    chdir: "{{ webapp_dir }}"
+    creates: "{{ webapp_dir }}/bin/buildout"
+
+
+- name: Run buildout and install dependencies
+  command: bin/buildout
+  args:
+    chdir: "{{ webapp_dir }}"
+  tags: run_buildout
+
+
+- name: Collect django app static media
+  command: bin/{{ webapp_name }} collectstatic --noinput
+  args:
+    chdir: "{{ webapp_dir }}"
+
+
+- name: Create database tables
+  command: bin/{{ webapp_name }} syncdb --noinput
+  args:
+    chdir: "{{ webapp_dir }}"
+
+
+- name: Migrate database
+  command: bin/{{ webapp_name }} migrate
+  args:
+    chdir: "{{ webapp_dir }}"
+  notify:
+  - Restart webapp
+
+
+- name: Create webapp nginx config
+  template: src=nginx.conf.j2
+            dest=~/local/nginx/sites-enabled/{{ webapp_name }}.conf
+            mode=0644
+  notify:
+  - Restart nginx 
+
+
+- name: Create supervisor config for our webapp
+  template: src=webapp_supervisor.ini.j2
+            dest=~/local/etc/supervisord/{{ webapp_name }}.ini
+            mode=0644
+  notify:
+  - Reload supervisord
+  - Restart webapp
+
+
+## Set up our cron jobs
+# The examples here is because I normally use django mailer as a simple
+# mail Queue
+# - name: <your_app_name> - Send mail cron job
+#   cron: name="send mail"
+#         job="{{ webapp_dir }}/bin/{{ webapp_name }} send_mail >> {{ webapp_logs }}/cron_mail.log 2>&1"
+
+# - name: <your_app_name> - Retry mail cron job
+#   cron: name="retry deferred mail" minute="0,20,40" 
+#         job="{{ webapp_dir }}/bin/{{ webapp_name }} retry_deferred >> {{ webapp_logs }}/cron_mail_deferred.log 2>&1"

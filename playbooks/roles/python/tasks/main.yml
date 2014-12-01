@@ -1,0 +1,8 @@
+# A clean webfaction server wont have pip installed. This role will take care
+# of this. currently I'm using python 2.7, but I may in future use 3.x
+---
+- name: Ensure the local python packages dir exists
+  file: path=~/lib/python2.7 state=directory
+
+- name: Install pip
+  easy_install: executable=easy_install-2.7 name=pip

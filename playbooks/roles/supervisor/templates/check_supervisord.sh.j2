@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if ps -u {{ ansible_ssh_user }} | grep -E 'supervisord$' > /dev/null; then
+    echo "supervisord is running."
+else
+    echo "starting supervisord."
+    {{ user_home }}/bin/supervisord
+    {{ user_home }}/bin/supervisorctl start all
+fi

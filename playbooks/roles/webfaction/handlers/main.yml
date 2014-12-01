@@ -1,0 +1,18 @@
+---
+- name: Reload supervisord
+  supervisorctl: name={{ item }}
+                 state=present
+                 supervisorctl_path={{ user_dir }}/bin/supervisorctl
+  with_items:
+    - "{{ app_name }}"
+    - nginx
+
+- name: Restart webapp
+  supervisorctl: name={{ app_name }} state=restarted
+                 supervisorctl_path={{ user_dir }}/bin/supervisorctl
+  tags: restart_webapp
+
+- name: Restart nginx
+  supervisorctl: name=nginx state=restarted
+                 supervisorctl_path={{ user_dir }}/bin/supervisorctl
+  tags: restart_nginx

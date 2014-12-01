@@ -1,0 +1,14 @@
+# Our webfaction tasks are mainly used to set up some final links between
+# supervisor, nginx, and our future webapp.
+# As a side note; I'm not convinced these tasks belong here, and will
+# probably move them sometime in the future.
+---
+- name: Make sure log directory exists
+  file: path=~/log state="directory"
+
+- name: Create the nginx supervisor config
+  template: src=nginx_supervisor.ini.j2
+            dest=~/local/etc/supervisord/nginx.ini
+  notify:
+  - Reload supervisord
+  - Restart nginx

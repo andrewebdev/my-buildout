@@ -1,0 +1,9 @@
+[program:nginx]
+command = {{ user_home }}/local/sbin/nginx
+user = {{ username }}
+stdout_logfile = {{ user_home }}/log/nginx_out.log
+stderr_logfile = {{ user_home }}/log/nginx_err.log
+autostart = true
+autorestart = true
+redirect_stderr = true
+exitcodes = 0

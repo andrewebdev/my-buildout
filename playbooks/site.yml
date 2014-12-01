@@ -1,0 +1,7 @@
+# This playbook will manage the website on the webfaction
+---
+- hosts: webservers
+  gather_facts: False
+  roles:
+    - webfaction
+    - website

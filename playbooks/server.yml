@@ -1,0 +1,10 @@
+---
+# This playbook only sets up a new webfaction server with specific dependencies
+# which is used in other playbooks, and any other requirements for my django
+# apps to run.
+- hosts: webservers
+  gather_facts: False
+  roles:
+    - python
+    - supervisor
+    - nginx
